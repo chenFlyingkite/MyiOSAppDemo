@@ -3,9 +3,6 @@
 //
 
 #import <Foundation/Foundation.h>
-//#import "MyiOSAppDemo-Swift.h"
-
-//@class ViewController;
 
 @interface ASD : NSObject
 @end

@@ -7,78 +7,114 @@ import UIKit
 
 //https://www.wolfram.com/mathematica/new-in-8/comprehensive-image-processing-environment/
 
+public enum FLDirection : Character {
+    case leftToRight = "-"
+    case topToBottom = "|"
+    case no          = "?"
+}
+
+public enum FLGravity : Character {
+    case left        = "L"
+    case right       = "R"
+    case top         = "T"
+    case bottom      = "B"
+    case centerX     = "X"
+    case centerY     = "Y"
+    case center      = "C"
+    case matchParent = "M"
+    case no          = "?"
+}
+
+// chars are define like the 3*4 calculator pad
+
+public enum FLCorner : Character {
+    case leftTop        = "7"
+    case leftCenterY    = "4"
+    case leftBottom     = "1"
+    case centerXTop     = "8"
+    case centerXCenterY = "5"
+    case centerXBottom  = "2"
+    case rightTop       = "9"
+    case rightCenterY   = "6"
+    case rightBottom    = "3"
+    case no             = "0"
+
+    private static let order = "123456789".toChars()
+    public static func of(_ i:Int) -> Self {
+        if (1 <= i && i <= 9) {
+            let c = order[i-1]
+            return Self.init(rawValue: c)!
+        } else {
+            return .no
+        }
+    }
+}
+
+public enum FLSame : Character {
+    case leftRight          = "H"
+    case topBottom          = "I"
+    case widthHeight        = "+"
+    case leftTopRightBottom = "#"
+    case no                 = "?"
+}
+
+public enum FLSide : Character {
+    case left   = "L"
+    case top    = "T"
+    case right  = "R"
+    case bottom = "B"
+    case no     = "?"
+}
+
 public class FLLayouts {
     public typealias NSLayoutAttribute = NSLayoutConstraint.Attribute
 
     // MARK: Apply contraint
-    public class func activate(_ root: UIView, forConstraint all: Array<AnyObject>) -> Void {
+    public class func activate(_ root: UIView, forConstraint all: Array<Any>) -> Void {
         // Not use the root.subViews, since it will find UISlider's contraint
         // <_UISlideriOSVisualElement: 0x14b6145f0; frame = (0 0; 100 34); opaque = NO; autoresize = W+H; layer = <CALayer: 0x283337920>>
         // and cause UISlider fail to layout with given constraints
 
-        // Step 1: Collects the used views in constraints, excldue the root
+        // Step 1: Collects the used views in constraints, exclude root
         var used: Set<UIView> = Self.getUsedViews(all)
-        used.remove(root)
-//        NSMutableSet < UIView*>* used = [FLLayouts getUsedViews:all];
-//        [used removeObject:root];
-
         // Omit root since it may have constraint from storyboard
-        // root.translatesAutoresizingMaskIntoConstraints = false;
-        //qwe("activate cons: %s", ssString(root));
-        //[used.allObjects printAll];
+        used.remove(root)
 
         Self.disableAutoResizingMask(used)
         // Self.disableAutoResizingMask(used.toArray()) // same
         Self.applyConstraints(all)
-//        [FLLayouts disableAutoResizingMask:used.allObjects];
-//        [FLLayouts applyConstraints:all];
     }
 
-    public class func disableAutoResizingMask(_ child:Set<UIView>) -> Void {
+    public class func disableAutoResizingMask(_ child: Set<UIView>) -> Void {
         for v in child {
             v.translatesAutoresizingMaskIntoConstraints = false
         }
     }
 
     public class func disableAutoResizingMask(_ child: Array<UIView>) -> Void {
-        //[child printAll];
         let n = child.count
         for i in 0..<n {
             let v = child[i]
             v.translatesAutoresizingMaskIntoConstraints = false
         }
-//        for (UIView* v in child) {
-//            bool isView = [v isKindOfClass:UIView.class]; //  it is really strange.... fixme
-//            if (isView) { // to omit the layout guide
-//                v.translatesAutoresizingMaskIntoConstraints = false;
-//                //[v removeConstraints:v.constraints];
-//            } else {
-//                qwe("omit %s", ssString(v));
-//            }
-//        }
     }
 
     // Type = NSArray<NSLayoutConstraint*>* or NSLayoutConstraint*
-    public class func applyConstraints(_ all: Array<AnyObject>) -> Void {
+    public class func applyConstraints(_ all: Array<Any>) -> Void {
         let a = Self.expand(all)
         NSLayoutConstraint.activate(a)
     }
 
-//+ (void) applyConstraints:(NSArray<id>*)all {
-//    // Using add constraint by each one will crashes
-//    NSMutableArray<NSLayoutConstraint*> *a = [FLLayouts expand:all];
-//    [NSLayoutConstraint activateConstraints:a];
-//}
-
     // MARK: Add views
     // DFS on child and add child to parent, then return root (child's parent)
-    public class func addViewTo(_ root: UIView, child:Array<AnyObject>) -> UIView {
+    @discardableResult
+    public class func addViewTo(_ root: UIView, child:Array<Any>) -> UIView {
         //let isToStack = root is UIStackView// [root isKindOfClass:UIStackView.class];
         let n = child.count
         for i in 0..<n {
             let x = child[i]
             var w: UIView? = nil
-            if let a = x as? Array<AnyObject> {
+            if let a = x as? Array<Any> {
                 let p = i - 1
                 if (p < 0) {
                     print("Wrong for child[\(p)]")
@@ -102,48 +138,17 @@ public class FLLayouts {
         }
         return root
     }
-//
-//+ (__kindof UIView*) addViewTo:(__kindof UIView*)root child:(NSArray*)child {
-//    // DFS on child and add its child, then return root (child's parent)
-//        bool isToStack = [root isKindOfClass:UIStackView.class];
-//for (int i = 0; i < child.count; i++) {
-//        id v = child[i]; // v is UIView* or NSArray*
-//        UIView* w;
-//if ([v isKindOfClass:NSArray.class]) {
-//        NSArray *vs = (NSArray *) v;
-//if (i < 1) {
-//        qwe("Wrong for child[%d]", i-1);
-//} else {
-//    if ([child[i-1] isKindOfClass:UIView.class]) {
-//        UIView* rt = (UIView *) child[i - 1];
-//        w = [FLLayouts addViewTo:rt child:vs];
-//    }
-//}
-//} else if ([v isKindOfClass:UIView.class]) {
-//    w = (UIView *) v;
-//}
-//if (w) {
-//    if (isToStack) {
-//        __kindof UIStackView * stack = root;
-//        [stack addArrangedSubview:w];
-//    } else {
-//        [root addSubview:w];
-//    }
-//}
-//}
-//return root;
-//}
 
     // MARK: DFS methods
     // Let all = [NSLayoutConstraint or [NSLayoutConstraint]]
     // Returns non-null UIView used in NSLayoutConstraint, named S,
     // formally defined as S = {x.firstItem, x.secondItem} for each x in all
-    private class func getUsedViews(_ all:Array<AnyObject>) -> Set<UIView> {
+    private class func getUsedViews(_ all:Array<Any>) -> Set<UIView> {
         var used:Set<UIView> = [];
         for x in all {
-            if let a = x as? Array<AnyObject> {
+            if let a = x as? Array<Any> {
                 let inner = Self.getUsedViews(a)
-                used = used.union(inner) // TODO need?
+                used = used.union(inner)
             } else if let c = x as? NSLayoutConstraint {
                 let vi = [c.firstItem, c.secondItem]
                 for y in vi {
@@ -157,34 +162,11 @@ public class FLLayouts {
         }
         return used
     }
-//    + (NSMutableSet<UIView*>*)getUsedViews:(NSArray<id>*)all {
-//        NSMutableSet<UIView*>* used = [NSMutableSet new];
-//        for (id x in all) {
-//            if ([x isKindOfClass:NSArray.class]) {
-//                NSMutableSet<UIView*>* inner = [FLLayouts getUsedViews:x];
-//                [used unionSet:inner];
-//            } else if ([x isKindOfClass:NSLayoutConstraint.class]) {
-//                NSLayoutConstraint* c = x;
-//                NSArray * a = @[c.firstItem ?: NSNull.null,
-//                                c.secondItem ?: NSNull.null,];
-//                for (id z in a) {
-//                    bool isView = [z isKindOfClass:UIView.class];
-//                    if (isView) {
-//                        //if (isView && ![used containsObject:z]) {
-//                        [used addObject:z];
-//                    }
-//                }
-//            } else {
-//                qwe("Did not add item : %s", ssString(x));
-//            }
-//        }
-//        return used;
-//    }
 
-    private class func expand(_ all:Array<AnyObject>) -> Array<NSLayoutConstraint> {
+    private class func expand(_ all:Array<Any>) -> Array<NSLayoutConstraint> {
         var used: Array<NSLayoutConstraint> = []
         for x in all {
-            if let a = x as? Array<AnyObject> {
+            if let a = x as? Array<Any> {
                 let inner = Self.expand(a)
                 used += inner
             } else if let c = x as? NSLayoutConstraint {
@@ -195,30 +177,12 @@ public class FLLayouts {
         }
         return used
     }
-//
-//    // Expand all as List<NSLayoutConstraint>
-//+ (NSMutableArray<NSLayoutConstraint*>*) expand:(NSArray<id>*)all {
-//    NSMutableArray<NSLayoutConstraint*>* used = [NSMutableArray new];
-//    for (id x in all) {
-//        if ([x isKindOfClass:NSArray.class]) {
-//            NSMutableArray<NSLayoutConstraint*>* inner = [FLLayouts expand:x];
-//            // add all
-//            [used addAll:inner];
-//        } else if ([x isKindOfClass:NSLayoutConstraint.class]) {
-//            NSLayoutConstraint* c = x;
-//            [used add:c];
-//        } else {
-//            qwe("Did not add item : %s", ssString(x));
-//        }
-//    }
-//    return used;
-//}
 
     // Expand all as List<UIView>
-    public class func expandAllViews(_ all:Array<AnyObject>) -> Array<UIView> {
+    public class func expandAllViews(_ all:Array<Any>) -> Array<UIView> {
         var used:Array<UIView> = []
         for x in all {
-            if let a = x as? Array<AnyObject> {
+            if let a = x as? Array<Any> {
                 let inner = Self.expandAllViews(a)
                 used += inner
             } else if let v = x as? UIView {
@@ -229,23 +193,26 @@ public class FLLayouts {
         }
         return used
     }
-//        + (NSMutableArray<UIView*>*) expandAllViews:(NSArray<id>*)all {
-//    NSMutableArray<UIView*>* used = [NSMutableArray new];
-//    for (id x in all) {
-//        if ([x isKindOfClass:NSArray.class]) {
-//            NSMutableArray<UIView*>* inner = [FLLayouts expandAllViews:x];
-//            // add all
-//            [used addAll:inner];
-//        } else if ([x isKindOfClass:UIView.class]) {
-//            UIView* c = x;
-//            [used add:c];
-//        } else {
-//            qwe("Did not add item : %s", ssString(x));
-//        }
-//    }
-//    return used;
-//}
 
+    // Round robin on margins
+    private class func round(_ x:Int, _ n:Int) -> Int {
+        if (x == n - 1) {
+            return 0
+        } else {
+            return x + 1
+        }
+    }
+
+    // MARK: Safe area
+    public class func view(_ v1:UIView, equalToSafeAreaOf v2:UIView) -> Array<NSLayoutConstraint> {
+        let g = v2.safeAreaLayoutGuide
+        return [
+            v1.topAnchor.constraint(equalTo: g.topAnchor),
+            v1.leftAnchor.constraint(equalTo: g.leftAnchor),
+            v1.rightAnchor.constraint(equalTo: g.rightAnchor),
+            v1.bottomAnchor.constraint(equalTo: g.bottomAnchor),
+        ]
+    }
 
     // MARK: - For constraints, v1.a1 = m x v2.a2 + c
     // MARK: Constant value
@@ -265,512 +232,322 @@ public class FLLayouts {
         }
         return a
     }
+
+    // MARK: Size
+    public class func view(_ v1:UIView, width:Double , height: Double) -> Array<NSLayoutConstraint> {
+        return [
+            Self.view(v1, set: .width, to: width),
+            Self.view(v1, set: .height, to: height),
+        ]
+    }
+
+    // MARK: v1.attr = v2.attr + c
+    public class func view(_ v1:UIView? = nil, aline attr:NSLayoutAttribute, to v2:Array<UIView>, margins margins:Array<Double> = [0]) -> Array<NSLayoutConstraint> {
+        var ans:[NSLayoutConstraint] = []
+        let n = v2.count
+        if (n == 0) {
+            return ans
+        }
+
+        // Determine first one
+        var from:Int = 0
+        var p:UIView
+        if let v1 = v1 {
+            //  v1, v2 = [a, b, ..., ]
+            //  p^        ^from
+            from = 0
+            p = v1
+        } else {
+            //  nil, v2 = [a, b, ..., ]
+            //            p^  ^from
+            from = 1
+            p = v2[0];
+        }
+        // margin index
+        var gaps = margins
+        var gat = 0
+        if (gaps.count == 0) {
+            gaps = [0]
+        }
+        let glen = gaps.count
+        // margin
+
+        // Create them
+        for i in from..<n {
+            let v = v2[i]
+            let dx = gaps[gat]
+            let c = Self.view(p, align: attr, to: v, offset: dx)
+            ans.append(c)
+            // Round robin on margins
+            gat = round(gat, glen)
+        }
+        return ans
+    }
+
+    public class func view(_ v1:UIView, align attr:NSLayoutAttribute, to v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+        return NSLayoutConstraint.init(item: v1, attribute: attr, relatedBy: .equal,
+                toItem: v2, attribute: attr, multiplier: 1, constant: CGFloat(c))
+    }
+
+    // MARK: Relative Layout, above|below, to(Left|Right)Of
+    // v1.bottom = v2.top - c
+    public class func view(_ v1:UIView, above v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+        return NSLayoutConstraint.init(item: v1, attribute: .bottom, relatedBy: .equal,
+                toItem: v2, attribute: .top, multiplier: 1, constant: CGFloat(-c))
+    }
+
+    public class func view(_ v1:UIView, below v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+        return Self.view(v2, above:v1, offset: -c)
+    }
+
+    // v1.left = v2.right + c
+    public class func view(_ v1:UIView, toLeftOf v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+        return NSLayoutConstraint.init(item: v1, attribute: .right, relatedBy: .equal,
+                toItem: v2, attribute: .left, multiplier: 1, constant: CGFloat(-c))
+    }
+
+    public class func view(_ v1:UIView, toRightOf v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+        return Self.view(v2, toLeftOf:v1, offset: -c)
+    }
+
+    // MARK: Linear layout
+    public class func layout(_ v2:Array<UIView>, axis direction:FLDirection, margins gaps: Array<Double> = [0]) -> Array<NSLayoutConstraint> {
+        return Self.view(nil, layout: v2, axis: direction, margins:gaps)
+    }
+
+    public class func view(_ v1:UIView?, layout v2:Array<UIView>, axis direction:FLDirection, margins margins: Array<Double> = [0]) -> Array<NSLayoutConstraint> {
+        var ans:Array<NSLayoutConstraint> = []
+        let n = v2.count
+        var head:NSLayoutAttribute = .left
+        var tail:NSLayoutAttribute = .right
+        let upDown = direction == .topToBottom
+        if (upDown) {
+            head = .top
+            tail = .bottom
+        }
+        // margin index
+        var gaps = margins
+        var gat = 0
+        if (gaps.count == 0) {
+            gaps = [0]
+        }
+        let glen = gaps.count
+        // margin
+
+        var dx:Double = 0
+        // first one
+        if let v1 = v1 {
+            dx = gaps[gat]
+            let c = Self.view(v1, align: head, to: v2[0], offset:dx)
+            ans.append(c)
+            gat = round(gat, glen)
+        }
+
+        // Create middle
+        for i in 1..<n {
+            let v = v2[i]
+            let w = v2[i-1]
+            dx = gaps[gat]
+            var c : NSLayoutConstraint
+            if (upDown) {
+                c = Self.view(w, above:v, offset:dx)
+            } else {
+                c = Self.view(w, toLeftOf: v, offset:dx)
+            }
+            ans.append(c)
+            gat = round(gat, glen)
+        }
+
+        // last one
+        if let v1 = v1 {
+            dx = gaps[gat]
+            let c = Self.view(v1, align: tail, to: v2[n-1], offset:dx)
+            ans.append(c)
+            gat = round(gat, glen)
+        }
+
+        return ans
+    }
+
+    public class func view(_ v1:UIView, layout v2:Array<UIView>, axis direction:FLDirection, gravity gravity:FLGravity, margins margins:Array<Double>) -> Array<NSLayoutConstraint> {
+        var ans:Array<NSLayoutConstraint> = []
+        var size: NSLayoutAttribute = .notAnAttribute
+        switch (direction) {
+        case .leftToRight: size = .height
+        case .topToBottom: size = .width
+        default: break
+        }
+        // For direction
+        if (direction != .no) {
+            let cs = Self.view(v1, layout: v2, axis: direction)
+            ans += cs
+        }
+
+        // For gravity
+        var g: NSLayoutAttribute = .notAnAttribute
+        switch (gravity) {
+        case .left: g = .left
+        case .right: g = .right
+        case .top: g = .top
+        case .bottom: g = .bottom
+        case .centerX: g = .centerX
+        case .centerY: g = .centerY
+        case .center: do {
+            ans += Self.view(v1, aline: .centerX, to: v2)
+            ans += Self.view(v1, aline: .centerY, to: v2)
+            break
+        }
+        case .matchParent: g = size
+        default: break
+        }
+        if (g != .notAnAttribute) {
+            ans += Self.view(v1, aline: g, to: v2)
+        }
+        return ans
+    }
+
+    // MARK: Corner = 2 side alignment
+    public class func view(_ v1:UIView, corner at:FLCorner, to v2:UIView, offsetX dx:Double = 0, offsetY dy:Double = 0) -> Array<NSLayoutConstraint> {
+        var ans:Array<NSLayoutConstraint> = []
+        var x:NSLayoutAttribute = .left
+        var y:NSLayoutAttribute = .top
+        if (at == .leftTop) {
+            x = .left
+            y = .top
+        } else if (at == .leftCenterY) {
+            x = .left
+            y = .centerY
+        } else if (at == .leftBottom) {
+            x = .left
+            y = .bottom
+        } else if (at == .centerXTop) {
+            x = .centerX
+            y = .top
+        } else if (at == .centerXCenterY) {
+            x = .centerX
+            y = .centerY
+        } else if (at == .centerXBottom) {
+            x = .centerX
+            y = .bottom
+        } else if (at == .rightTop) {
+            x = .right
+            y = .top
+        } else if (at == .rightCenterY) {
+            x = .right
+            y = .centerY
+        } else if (at == .rightBottom) {
+            x = .right
+            y = .bottom
+        } else {
+        }
+        ans.append(Self.view(v1, align: x, to: v2, offset: dx))
+        ans.append(Self.view(v1, align: y, to: v2, offset: dy))
+        return ans
+    }
+
+    // MARK: Drawer
+    public class func view(_ v1:UIView, drawer at:FLSide, to v2:UIView, depth d:Double, offset margin:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+        var ans:Array<NSLayoutConstraint> = []
+        if (at == .no) {
+            return ans
+        }
+
+        var c: NSLayoutConstraint
+        // left
+        if (at == .right) {
+            c = Self.view(v1, set: .width, to: d)
+        } else {
+            c = Self.view(v1, align:.left, to: v2, offset:Double(margin.left))
+        }
+        ans.append(c)
+        // top
+        if (at == .bottom) {
+            c = Self.view(v1, set: .height, to: d)
+        } else {
+            c = Self.view(v1, align: .top, to: v2, offset: Double(margin.top))
+        }
+        ans.append(c)
+        // right
+        if (at == .left) {
+            c = Self.view(v1, set: .width, to: d)
+        } else {
+            c = Self.view(v1, align: .right, to: v2, offset:Double(-margin.right))
+        }
+        ans.append(c)
+        // bottom
+        if (at == .bottom) {
+            c = Self.view(v1, set: .height, to: d)
+        } else {
+            c = Self.view(v1, align: .bottom, to: v2, offset:Double(-margin.bottom))
+        }
+        ans.append(c)
+        return ans
+    }
+
+    // Mark: - Same
+    // v1.(width|height) = v2.(width|height) + (dx|dy)
+    public class func view(_ v1:UIView, sameWHTo v2:UIView, offsetX dx:Double = 0, offsetY dy:Double = 0) -> Array<NSLayoutConstraint> {
+        return [
+            Self.view(v1, align: .width, to: v2, offset: dx),
+            Self.view(v1, align: .height, to: v2, offset: dy),
+        ]
+    }
+
+    // v1.(left|right) = v2.(left|right) + (dx|dy)
+    public class func view(_ v1:UIView, sameXTo v2:UIView, offset margin:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+        return [
+            Self.view(v1, align: .left, to: v2, offset:Double(margin.left)),
+            Self.view(v1, align: .right, to: v2, offset:Double(-margin.right)),
+        ]
+    }
+
+    // v1.(top|bottom) = v2.(top|bottom) + (dx|dy)
+    public class func view(_ v1:UIView, sameYTo v2:UIView, offset margin:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+        return [
+            Self.view(v1, align: .top, to: v2, offset:Double(margin.top)),
+            Self.view(v1, align: .bottom, to: v2, offset:Double(-margin.bottom)),
+        ]
+    }
+
+    // v1.allSides = v2.allSides + offset
+    public class func view(_ v1:UIView, sameTo v2:UIView, offset margin:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+        return [
+            Self.view(v1, align: .top, to: v2, offset:Double(margin.top)),
+            Self.view(v1, align: .left, to: v2, offset:Double(margin.left)),
+            Self.view(v1, align: .right, to: v2, offset:Double(-margin.right)),
+            Self.view(v1, align: .bottom, to: v2, offset:Double(-margin.bottom)),
+        ]
+    }
+
+    public class func views(_ v1:Array<UIView>, same opt:FLSame, margins margins:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+        var ans:Array<NSLayoutConstraint> = []
+        let n = v1.count
+        if (opt == .no || n == 0) {
+            return ans
+        } else {
+            var c :Array<NSLayoutConstraint> = []
+            let p = v1[0]
+            for i in 1..<n {
+                let vi = v1[i]
+                if (opt == .leftRight) {
+                    c = Self.view(p, sameXTo: vi, offset: margins)
+                } else if (opt == .topBottom) {
+                    c = Self.view(p, sameYTo: vi, offset:margins)
+                } else if (opt == .widthHeight) {
+                    c = Self.view(p, sameWHTo: vi, offsetX:Double(margins.left), offsetY:Double(margins.top))
+                } else if (opt == .leftTopRightBottom) {
+                    c = Self.view(p, sameTo: vi, offset:margins)
+                } else {
+                    c = []
+                }
+                if (c.count > 0) {
+                    ans += c
+                }
+            }
+        }
+        return ans
+    }
+
     // TODO : Going
 
-//        + (NSArray<NSLayoutConstraint*>*) views:(NSArray<__kindof UIView*>*)v1 set:(NSLayoutAttribute)attr to:(double)val {
-//    NSMutableArray<NSLayoutConstraint*>*a = [NSMutableArray new];
-//    for (int i = 0; i < v1.count; i++) {
-//        UIView *v = v1[i];
-//        a[i] = [FLLayouts view:v set:attr to:val];
-//    }
-//    return a;
-//}
-//#pragma mark - Constant value
-//// v1.attr = val
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 set:(NSLayoutAttribute)attr to:(double)val {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:attr relatedBy:NSLayoutRelationEqual
-//    toItem:nil attribute:attr multiplier:1 constant:val];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) views:(NSArray<__kindof UIView*>*)v1 set:(NSLayoutAttribute)attr to:(double)val {
-//    NSMutableArray<NSLayoutConstraint*>*a = [NSMutableArray new];
-//    for (int i = 0; i < v1.count; i++) {
-//        UIView *v = v1[i];
-//        a[i] = [FLLayouts view:v set:attr to:val];
-//    }
-//    return a;
-//}
-//
-//#pragma mark - size
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 width:(double)w height:(double)h {
-//    return @[
-//        [FLLayouts view:v1 set:NSLayoutAttributeWidth to:w],
-//    [FLLayouts view:v1 set:NSLayoutAttributeHeight to:h],
-//    ];
-//}
 }
-
-//}
-//
-//#import <Foundation/Foundation.h>
-//#import "FLLayouts.h"
-//#import "FLNSKit.h"
-//#import "FLUIKit.h"
-//
-//
-//#pragma clang diagnostic push
-//#pragma clang diagnostic ignored "-Wsign-conversion"
-//@implementation FLLayouts {
-//
-//}
-//#pragma mark - Apply contraint
-//
-//
-//#pragma mark - Constant value
-//// v1.attr = val
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 set:(NSLayoutAttribute)attr to:(double)val {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:attr relatedBy:NSLayoutRelationEqual
-//    toItem:nil attribute:attr multiplier:1 constant:val];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) views:(NSArray<__kindof UIView*>*)v1 set:(NSLayoutAttribute)attr to:(double)val {
-//    NSMutableArray<NSLayoutConstraint*>*a = [NSMutableArray new];
-//    for (int i = 0; i < v1.count; i++) {
-//        UIView *v = v1[i];
-//        a[i] = [FLLayouts view:v set:attr to:val];
-//    }
-//    return a;
-//}
-//
-//#pragma mark - size
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 width:(double)w height:(double)h {
-//    return @[
-//        [FLLayouts view:v1 set:NSLayoutAttributeWidth to:w],
-//    [FLLayouts view:v1 set:NSLayoutAttributeHeight to:h],
-//    ];
-//}
-//
-//#pragma mark - one property alignment
-//// v1.attr = v2.attr + c
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 align:(NSLayoutAttribute)attr to:(__kindof UIView*)v2 offset:(double)c {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:attr relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:attr multiplier:1 constant:c];
-//}
-//
-//// v1.attr = v2.attr
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 align:(NSLayoutAttribute)attr to:(__kindof UIView*)v2 {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:attr relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:attr multiplier:1 constant:0];
-//}
-//
-//
-//#pragma mark - Relative Layout
-//// v1.bottom = v2.top - c
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 above:(__kindof UIView*)v2 offset:(double) c {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:NSLayoutAttributeBottom relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:NSLayoutAttributeTop multiplier:1 constant:-c];
-//}
-//
-//// v1.bottom = v2.top
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 above:(__kindof UIView*)v2 {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:NSLayoutAttributeBottom relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:NSLayoutAttributeTop multiplier:1 constant:0];
-//}
-//
-//// v1.top = v2.bottom + c
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 below:(__kindof UIView*)v2 offset:(double)c {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:NSLayoutAttributeBottom multiplier:1 constant:c];
-//}
-//
-//// v1.top = v2.bottom
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 below:(__kindof UIView*)v2 {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:NSLayoutAttributeBottom multiplier:1 constant:0];
-//}
-//
-//// v1.right = v2.left + c
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 toLeftOf:(__kindof UIView*)v2 offset:(double)c {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:NSLayoutAttributeRight relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:NSLayoutAttributeLeft multiplier:1 constant:c];
-//}
-//
-//// v1.right = v2.left
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 toLeftOf:(__kindof UIView*)v2 {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:NSLayoutAttributeRight relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:NSLayoutAttributeLeft multiplier:1 constant:0];
-//}
-//
-//// v1.left = v2.right + c
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 toRightOf:(__kindof UIView*)v2 offset:(double)c {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:NSLayoutAttributeLeft relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:NSLayoutAttributeRight multiplier:1 constant:c];
-//}
-//
-//// v1.left = v2.right
-//        + (NSLayoutConstraint*) view:(__kindof UIView*)v1 toRightOf:(__kindof UIView*)v2 {
-//    return [NSLayoutConstraint constraintWithItem:v1 attribute:NSLayoutAttributeLeft relatedBy:NSLayoutRelationEqual
-//    toItem:v2 attribute:NSLayoutAttributeRight multiplier:1 constant:0];
-//}
-//
-//#pragma mark - Layout child
-//        + (NSArray<NSLayoutConstraint*>*)view:(__kindof UIView *)v1 layoutChildAxis:(FLDirection)direction gravity:(FLGravity)gravity {
-//    return [FLLayouts view:v1 layout:v1.subviews axis:direction gravity:gravity];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) views:(NSArray<__kindof UIView*>*)v2 layoutAxis:(FLDirection)direction gravity:(FLGravity)gravity {
-//    return [FLLayouts view:nil layout:v2 axis:direction gravity:gravity];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 layout:(NSArray<__kindof UIView*>*)v2 axis:(FLDirection)direction gravity:(FLGravity)gravity {
-//    return [FLLayouts view:v1 layout:v2 axis:direction gravity:gravity margins:nil];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 layout:(NSArray<__kindof UIView*>*)v2 axis:(FLDirection)direction gravity:(FLGravity)gravity margins:(NSArray<NSNumber*>*)margins {
-//    NSMutableArray<NSLayoutConstraint*>* a = [NSMutableArray new];
-//    NSLayoutAttribute size = NSLayoutAttributeNotAnAttribute;
-//    NSMutableArray<NSLayoutConstraint*>* b = [NSMutableArray new];
-//    // For direction
-//    switch (direction) {
-//    case FLLeftToRight:
-//        size = NSLayoutAttributeHeight;
-//        break;
-//    case FLTopToBottom:
-//        size = NSLayoutAttributeWidth;
-//        break;
-//    default: break;
-//    }
-//    if (direction != FLDirectionNo) {
-//        [a addAll: [FLLayouts view:v1 layout:v2 axis:direction]];
-//    }
-//    // For gravity
-//    NSLayoutAttribute g = NSLayoutAttributeNotAnAttribute;
-//    switch (gravity) {
-//    case FLGravityLeft:    g = NSLayoutAttributeLeft;    break;
-//    case FLGravityRight:   g = NSLayoutAttributeRight;   break;
-//    case FLGravityTop:     g = NSLayoutAttributeTop;     break;
-//    case FLGravityBottom:  g = NSLayoutAttributeBottom;  break;
-//    case FLGravityCenterX: g = NSLayoutAttributeCenterX; break;
-//    case FLGravityCenterY: g = NSLayoutAttributeCenterY; break;
-//    case FLGravityCenter:
-//        [b addAll:[FLLayouts view:v1 aline:NSLayoutAttributeCenterX to:v2]];
-//        [b addAll:[FLLayouts view:v1 aline:NSLayoutAttributeCenterY to:v2]];
-//        break;
-//    case FLGravityMatchParent: g = size; break;
-//    default: break;
-//    }
-//    if (g != NSLayoutAttributeNotAnAttribute) {
-//        [b addAll:[FLLayouts view:v1 aline:g to:v2]];
-//    }
-//    if (b.count > 0) {
-//        [a addAll:b];
-//    }
-//    [b removeAllObjects];
-//    return a;
-//}
-//
-//#pragma mark - Multiple views
-//
-//        + (NSArray<NSLayoutConstraint*>*)view:(__kindof UIView *)v1 aline:(NSLayoutAttribute)attr to:(NSArray<__kindof UIView*>*)v2 {
-//    NSMutableArray<NSLayoutConstraint*>* a = [NSMutableArray new];
-//    int from = 0;
-//    UIView* p = nil;
-//    if (v1) {
-//        //  v1, v2 = [a, b, ..., ]
-//        //  p^        ^from
-//        from = 0;
-//        p = v1;
-//    } else {
-//        //  nil, v2 = [a, b, ..., ]
-//        //            p^  ^from
-//        from = 1;
-//        if (v2.count > 0) {
-//            p = v2[0];
-//        }
-//    }
-//    for (int i = from; i < v2.count; i++) {
-//        UIView* v = v2[i];
-//        if (v) {
-//            [a add:[FLLayouts view:p align:attr to:v]];
-//        }
-//    }
-//    return a;
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) layout:(NSArray<__kindof UIView*>*)v2 axis:(FLDirection)direction {
-//    return [FLLayouts view:nil layout:v2 axis:direction gravity:FLGravityNo];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 layout:(NSArray<__kindof UIView*>*)v2 axis:(FLDirection)direction {
-//    NSMutableArray<NSLayoutConstraint*>* a = [NSMutableArray new];
-//    NSLayoutAttribute begin = NSLayoutAttributeLeft;
-//    NSLayoutAttribute ended = NSLayoutAttributeRight;
-//    bool upDown = direction == FLTopToBottom;
-//    if (upDown) {
-//        begin = NSLayoutAttributeTop;
-//        ended = NSLayoutAttributeBottom;
-//    }
-//    NSLayoutConstraint* x;
-//    long n = v2.count;
-//    if (n > 0) {
-//        if (v1) {
-//            x = [FLLayouts view:v1 align:begin to:v2[0]];
-//            [a addObject:x];
-//        }
-//    }
-//    for (int i = 1; i < n; i++) {
-//        // [... w, v]
-//        UIView* v = v2[i];
-//        UIView* w = v2[i-1];
-//        if (upDown) {
-//            x = [FLLayouts view:w above:v];
-//        } else {
-//            x = [FLLayouts view:w toLeftOf:v];
-//        }
-//        [a addObject:x];
-//    }
-//    if (n > 0) {
-//        if (v1) {
-//            x = [FLLayouts view:v1 align:ended to:v2[n - 1]];
-//            [a addObject:x];
-//        }
-//    }
-//    return a;
-//}
-//
-//
-//#pragma mark - Corner = 2 side alignment
-//
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 corner:(FLCorner)at to:(__kindof UIView*)v2 {
-//    return [FLLayouts view:v1 corner:at to:v2 offsetX:0 offsetY:0];
-//}
-//
-///// v1.attr1 = v2.attr1 & v1.attr2 = v2.attr2
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 corner:(FLCorner)at to:(__kindof UIView*)v2 offsetX:(double)dx offsetY:(double)dy {
-//    NSLayoutAttribute x = NSLayoutAttributeLeft;
-//    NSLayoutAttribute y = NSLayoutAttributeTop;
-//    if (at == FLCornerLeftTop) {
-//        x = NSLayoutAttributeLeft;
-//        y = NSLayoutAttributeTop;
-//    } else if (at == FLCornerLeftCenterY) {
-//        x = NSLayoutAttributeLeft;
-//        y = NSLayoutAttributeCenterY;
-//    } else if (at == FLCornerLeftBottom) {
-//        x = NSLayoutAttributeLeft;
-//        y = NSLayoutAttributeBottom;
-//    } else if (at == FLCornerCenterXTop) {
-//        x = NSLayoutAttributeCenterX;
-//        y = NSLayoutAttributeTop;
-//    } else if (at == FLCornerCenterXCenterY) {
-//        x = NSLayoutAttributeCenterX;
-//        y = NSLayoutAttributeCenterY;
-//    } else if (at == FLCornerCenterXBottom) {
-//        x = NSLayoutAttributeCenterX;
-//        y = NSLayoutAttributeBottom;
-//    } else if (at == FLCornerRightTop) {
-//        x = NSLayoutAttributeRight;
-//        y = NSLayoutAttributeTop;
-//    } else if (at == FLCornerRightCenterY) {
-//        x = NSLayoutAttributeRight;
-//        y = NSLayoutAttributeCenterY;
-//    } else if (at == FLCornerRightBottom){
-//        x = NSLayoutAttributeRight;
-//        y = NSLayoutAttributeBottom;
-//    }
-//    return @[[FLLayouts view:v1 align:x to:v2 offset:dx],
-//    [FLLayouts view:v1 align:y to:v2 offset:dy],
-//    ];
-//}
-//
-//
-//#pragma mark - Drawer
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 drawer:(FLSide)at to:(__kindof UIView*)v2 depth:(double)d {
-//    return [FLLayouts view:v1 drawer:at to:v2 depth:d offset:UIEdgeInsetsZero];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 drawer:(FLSide)at to:(__kindof UIView*)v2 depth:(double)d offset:(UIEdgeInsets)margin {
-//    NSMutableArray<NSLayoutConstraint*> *a = [NSMutableArray new];
-//    if (at == FLSideNo) {
-//        return a;
-//    }
-//    NSLayoutConstraint *c;
-//    // left
-//    if (at == FLSideRight) {
-//        c = [FLLayouts view:v1 set:NSLayoutAttributeWidth to:d];
-//    } else {
-//        c = [FLLayouts view:v1 align:NSLayoutAttributeLeft to:v2 offset:margin.left];
-//    }
-//    [a add:c];
-//    // top
-//    if (at == FLSideBottom) {
-//        c = [FLLayouts view:v1 set:NSLayoutAttributeHeight to:d];
-//    } else {
-//        c = [FLLayouts view:v1 align:NSLayoutAttributeTop to:v2 offset:margin.top];
-//    }
-//    [a add:c];
-//    // right
-//    if (at == FLSideLeft) {
-//        c = [FLLayouts view:v1 set:NSLayoutAttributeWidth to:d];
-//    } else {
-//        c = [FLLayouts view:v1 align:NSLayoutAttributeRight to:v2 offset:-margin.right];
-//    }
-//    [a add:c];
-//    // bottom
-//    if (at == FLSideTop) {
-//        c = [FLLayouts view:v1 set:NSLayoutAttributeHeight to:d];
-//    } else {
-//        c = [FLLayouts view:v1 align:NSLayoutAttributeBottom to:v2 offset:-margin.bottom];
-//    }
-//    [a add:c];
-//    return a;
-//}
-//
-//#pragma mark - Same
-//
-//// v1.width = v2.width
-//// v1.height = v2.height
-//        + (NSArray<NSLayoutConstraint*>*)view:(__kindof UIView *)v1 sameWHTo:(__kindof UIView*)v2 {
-//    return @[
-//        [FLLayouts view:v1 align:NSLayoutAttributeWidth to:v2],
-//    [FLLayouts view:v1 align:NSLayoutAttributeHeight to:v2],
-//    ];
-//}
-//
-//// v1.left = v2.left
-//// v1.right = v2.right
-//        + (NSArray<NSLayoutConstraint*>*)view:(__kindof UIView *)v1 sameXTo:(__kindof UIView*)v2 {
-//    return [FLLayouts view:v1 sameXTo:v2 offset:UIEdgeInsetsZero];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*)view:(__kindof UIView *)v1 sameXTo:(__kindof UIView*)v2 offset:(UIEdgeInsets)margin {
-//    return @[
-//        [FLLayouts view:v1 align:NSLayoutAttributeLeft to:v2 offset:margin.left],
-//    [FLLayouts view:v1 align:NSLayoutAttributeRight to:v2 offset:-margin.right],
-//    ];
-//}
-//
-//// v1.top = v2.top
-//// v1.bottom = v2.bottom
-//        + (NSArray<NSLayoutConstraint*>*)view:(__kindof UIView *)v1 sameYTo:(__kindof UIView*)v2 {
-//    return [FLLayouts view:v1 sameYTo:v2 offset:UIEdgeInsetsZero];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*)view:(__kindof UIView *)v1 sameYTo:(__kindof UIView*)v2 offset:(UIEdgeInsets)margin {
-//    return @[
-//        [FLLayouts view:v1 align:NSLayoutAttributeTop to:v2 offset:margin.top],
-//    [FLLayouts view:v1 align:NSLayoutAttributeBottom to:v2 offset:-margin.bottom],
-//    ];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) view:(__kindof UIView*)v1 sameTo:(__kindof UIView*)v2 {
-//    return [FLLayouts view:v1 sameTo:v2 offset:UIEdgeInsetsZero];
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*)view:(__kindof UIView *)v1 sameTo:(__kindof UIView *)v2 offset:(UIEdgeInsets)margin {
-//    return @[
-//        [FLLayouts view:v1 align:NSLayoutAttributeTop to:v2 offset:+margin.top],
-//    [FLLayouts view:v1 align:NSLayoutAttributeLeft to:v2 offset:+margin.left],
-//    [FLLayouts view:v1 align:NSLayoutAttributeRight to:v2 offset:-margin.right],
-//    [FLLayouts view:v1 align:NSLayoutAttributeBottom to:v2 offset:-margin.bottom],
-//    ];
-//}
-//
-//#pragma mark - Sames
-//// v[0].attr = v[i].attr for i = 1 ~ n-1
-//        + (NSArray<NSLayoutConstraint*>*) views:(NSArray<__kindof UIView*>*)vs align:(NSLayoutAttribute)attr {
-//    NSMutableArray<NSLayoutConstraint*> *a = [NSMutableArray new];
-//    for (int i = 1; i < vs.count; i++) {
-//        NSLayoutConstraint* c = [FLLayouts view:vs[i] align:attr to:vs[0]];
-//        [a add:c];
-//    }
-//    return a;
-//}
-//
-//        + (NSArray<NSLayoutConstraint*>*) views:(NSArray<__kindof UIView*>*)vs same:(FLSame)opt {
-//    NSMutableArray<NSLayoutConstraint*> *a = [NSMutableArray new];
-//    FLSame same = FLSameNo;
-//    NSArray<NSLayoutConstraint*>*(^run)(UIView *, UIView *) = nil;
-//    if (opt == FLSameLeftRight) {
-//        run = ^NSArray<NSLayoutConstraint*>*(UIView *v1, UIView *v2) {
-//            return [FLLayouts view:v1 sameXTo:v2];
-//        };
-//    } else if (opt == FLSameTopBottom) {
-//        run = ^NSArray<NSLayoutConstraint*>*(UIView *v1, UIView *v2) {
-//            return [FLLayouts view:v1 sameYTo:v2];
-//        };
-//    } else if (opt == FLSameWidthHeight) {
-//        run = ^NSArray<NSLayoutConstraint*>*(UIView *v1, UIView *v2) {
-//            return [FLLayouts view:v1 sameWHTo:v2];
-//        };
-//    } else if (opt == FLSameLeftTopRightBottom) {
-//        run = ^NSArray<NSLayoutConstraint*>*(UIView *v1, UIView *v2) {
-//            return [FLLayouts view:v1 sameTo:v2];
-//        };
-//    } else {
-//    }
-//    if (run) {
-//        for (int i = 1; i < vs.count; i++) {
-//            NSArray<NSLayoutConstraint*>* c = run(vs[i], vs[0]);
-//            [a addAll:c];
-//        }
-//    }
-//    return a;
-//}
-//
-//
-//        - (void) addStackView:(UIView*) parent {
-//    // 0 = fill equal same row/column
-//    // 1 = given width/height
-//    int way = 0;
-//    UIStackView* a;
-//    a = [UIStackView new];
-//    //a = self.horiz;
-//    a.axis = UILayoutConstraintAxisVertical;
-//    a.axis = UILayoutConstraintAxisHorizontal;
-//    if (way == 0) {
-//        a.alignment = UIStackViewAlignmentFill;
-//        a.distribution = UIStackViewDistributionFillEqually;
-//    } else if (way == 1) {
-//        a.alignment = UIStackViewAlignmentLeading;
-//        a.alignment = UIStackViewAlignmentCenter;
-//        a.alignment = UIStackViewAlignmentTrailing;
-//        a.distribution = UIStackViewDistributionEqualSpacing;
-//    } else {
-//
-//    }
-//    a.spacing = 2;
-//    NSMutableArray<NSLayoutConstraint*> * cons = [NSMutableArray new];
-//    for (int i = 0; i < 5; i++) {
-//        UIView *x = [UIView new];
-//        x.layer.backgroundColor = FLUIKit.color12[i].CGColor;
-//        // No use addSubview for it
-//        // [a addSubview:x]; fails for stackview
-//        if (way == 0) {
-//            [a addArrangedSubview:x];
-//        } else if (way == 1) {
-//            [cons add:[x.widthAnchor constraintEqualToConstant:20 + 10* i] ];
-//            [cons add:[x.heightAnchor constraintEqualToConstant:20 + 10* i] ];
-//
-//        }
-//        //[cons add:[x.heightAnchor constraintEqualToConstant:20 + 10* i] ];
-//
-//        //[cons add:[x.widthAnchor constraintEqualToConstant:20 + 10* i] ];
-//        //[cons add: [FLLayouts view:x align:NSLayoutAttributeWidth to:a ] ];
-//        //[cons add: [FLLayouts view:x set:NSLayoutAttributeHeight to:20] ];
-//        //[cons add: [FLLayouts view:x set:NSLayoutAttributeWidth to:20] ];
-//
-//        //[a addSubview:x];
-//        //[a addArrangedSubview:x];
-//    }
-//    if (way == 1) {
-//        [FLLayouts applyConstraints:cons];
-//    } else if (way == 2) {
-//
-//    } else {
-//
-//    }
-//    //[FLLayouts applyConstraints:cons];
-//    //[FLLayouts activate:a forConstraint:cons];
-//    a.layer.backgroundColor = UIColor.brownColor.CGColor;
-//    CGRect f;
-//    f = CGRectMake(0, 200, 300, 70);
-//    a.frame = f;
-//    [parent addSubview:a];
-//}
-//
-////+ (instancetype)constraintWithItem:(__kindof UIView*)view attribute:(NSLayoutAttribute)attr1 relatedBy:(NSLayoutRelation)relation toItem:(nullable id)view2 attribute:(NSLayoutAttribute)attr2 multiplier:(CGFloat)multiplier constant:(CGFloat)c API_AVAILABLE(macos(10.7), ios(6.0), tvos(9.0));
-//
-//@end
-//
-//#pragma clang diagnostic pop
-//
