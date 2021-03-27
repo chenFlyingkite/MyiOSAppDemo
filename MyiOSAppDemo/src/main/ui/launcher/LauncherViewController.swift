@@ -7,11 +7,13 @@
 //
 
 import UIKit
+//import GLKit
 
 
 // https://support.apple.com/zh-tw/HT204460
 // https://developer.apple.com/documentation/swift/imported_c_and_objective-c_apis/importing_objective-c_into_swift
 // https://developer.apple.com/documentation/swift/imported_c_and_objective-c_apis/importing_swift_into_objective-c
+
 
 
 class LauncherViewController : BaseViewController {
@@ -30,10 +32,10 @@ class LauncherViewController : BaseViewController {
     let part = UIView()
 
     private var testPart = true
+    private var glContext : OpenGLContext?
 
     // MARK: Life cycle
     override func viewDidLoad() {
-        Self.usingOpenGL()
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
@@ -43,27 +45,46 @@ class LauncherViewController : BaseViewController {
 //        tr = 0.393R + 0.769G + 0.189B
 //        tg = 0.349R + 0.686G + 0.168B
 //        tb = 0.272R + 0.534G + 0.131B
+        glContext = OpenGLContext()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         test()
-        testSpeed()
+        //testSpeed()
     }
 
     private func testSpeed() {
         print("----")
         // 3.19982740435325 = macOS / my on max=500, i = 10~10^4 on " "
         // 3.21225551594566
-//        [123] : End by xn(s, i * 10)
-//        [175] : End by String.init(repeating: s, count: i * 10)
-//        [842] : End by xn(s, i * 100)
-//        [1753] : End by String.init(repeating: s, count: i * 100)
-//        [8308] : End by xn(s, i * 1000)
-//        [17477] : End by String.init(repeating: s, count: i * 1000)
-//        [83393] : End by xn(s, i * 10000)
-//        [191587] : End by String.init(repeating: s, count: i * 10000)
-        let max = 1000
+        // max = 500, s = "+1"
+//        [52] : End by xn(s, i * 10)
+//        [49] : End by String.init(repeating: s, count: i * 10)
+//        [360] : End by For-i loop(repeating: s, count: i * 10)
+//        [214] : End by xn(s, i * 100)
+//        [438] : End by String.init(repeating: s, count: i * 100)
+//        [3623] : End by For-i loop(repeating: s, count: i * 100)
+//        [2066] : End by xn(s, i * 1000)
+//        [4363] : End by String.init(repeating: s, count: i * 1000)
+//        [38625] : End by For-i loop(repeating: s, count: i * 1000)
+//        [21725] : End by xn(s, i * 10000)
+//        [50731] : End by String.init(repeating: s, count: i * 10000)
+//        ...
+//        [54] : End by xn(s, i * 10)
+//        [49] : End by String.init(repeating: s, count: i * 10)
+//        [362] : End by For-i loop(repeating: s, count: i * 10)
+//        [213] : End by xn(s, i * 100)
+//        [438] : End by String.init(repeating: s, count: i * 100)
+//        [3628] : End by For-i loop(repeating: s, count: i * 100)
+//        [2068] : End by xn(s, i * 1000)
+//        [4367] : End by String.init(repeating: s, count: i * 1000)
+//        [36556] : End by For-i loop(repeating: s, count: i * 1000)
+//        [20821] : End by xn(s, i * 10000)
+//        [45621] : End by String.init(repeating: s, count: i * 10000)
+//        [442019] : End by For-i loop(repeating: s, count: i * 10000)
+
+        let max = 100
         let s = "+1"
         var mul = 1
         let clk = TicTac()
@@ -72,14 +93,14 @@ class LauncherViewController : BaseViewController {
 
             clk.tic()
             for i in 1..<max {
-                let x = clk.xn(s, i * mul)
+                let x = FLStrings.repeats(s, i * mul)
                 //print("#\(i) \(x.count)")
                 //print("#\(i) = |\(x)|")
                 if (x.count != i * mul * s.count) {
                     print("X_X Fail 2 on \(i)")
                 }
             }
-            clk.tac("End by xn(s, i * \(mul))")
+            clk.tac("End by FLStrings.repeats(s, i * \(mul))")
 
             clk.tic()
             for i in 1..<max {
@@ -92,15 +113,24 @@ class LauncherViewController : BaseViewController {
             }
             clk.tac("End by String.init(repeating: s, count: i * \(mul))")
 
+            // slow 3x
+            clk.tic()
+            for i in 1..<max {
+                var x = ""
+                for j in 0..<(i*mul) {
+                    x += s
+                }
+                //let x = String.init(repeating: s, count: i * mul)
+                //print("#\(i) \(x.count)")
+                //print("#\(i) = |\(x)|")
+                if (x.count != i * mul * s.count) {
+                    print("X_X Fail 3 on \(i)")
+                }
+            }
+            clk.tac("End by For-i loop(repeating: s, count: i * \(mul))")
+
         }
         print("----")
-    }
-
-    private class func usingOpenGL() {
-        let context = EAGLContext(api: .openGLES3)
-        if let ctx = context {
-            EAGLContext.setCurrent(ctx)
-        }
     }
 
     private func test() {
@@ -112,8 +142,11 @@ class LauncherViewController : BaseViewController {
 //        }
 
 
-        let sh = ShaderProgram.init(vertexCode: Self.vertex(), fragmentCode: "asd\n\nfff")
-        checkGLError()
+        let vs = Self.vertex()
+        let fs = Self.fragment()
+        let sh = ShaderProgram.from(vs, "asd\n\nfff")
+        let zh = ShaderProgram.from(vs, fs)
+        //checkGLError()
     }
 
     // MARK: Shader Vertex

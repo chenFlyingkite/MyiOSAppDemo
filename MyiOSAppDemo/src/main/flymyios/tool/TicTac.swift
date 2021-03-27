@@ -173,7 +173,7 @@ public class TicTac : NSObject {
      }
 
     public override var description: String {
-        return "tictac.size() = \(tictac.count)"
+        return "TicTac.size() = \(tictac.count)"
     }
 
     // MARK: Core
@@ -181,19 +181,8 @@ public class TicTac : NSObject {
         return Date().currentTimeMillis()
     }
 
-    public func xn(_ s:String, _ n:Int) -> String {
-        //return String.init(repeating: s, count: n) // ?
-        var ans = ""
-        var now = s
-        var x = n
-        while (x > 0) {
-            if ((x & 0x1) == 1) {
-                ans += now
-            }
-            now += now
-            x >>= 1
-        }
-        return ans
+    private func xn(_ s:String, _ n:Int) -> String {
+        return FLStrings.repeats(s, n)
     }
 }
 

@@ -3,7 +3,11 @@
 //
 
 import Foundation
+#if os(iOS)
 import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
 
 //https://www.wolfram.com/mathematica/new-in-8/comprehensive-image-processing-environment/
 
@@ -67,16 +71,26 @@ public enum FLSide : Character {
 }
 
 public class FLLayouts {
+    #if os(iOS)
+    public typealias View = UIView
+    public typealias StackView = UIStackView
+    public typealias EdgeInsets = UIEdgeInsets
+    #elseif os(macOS)
+    public typealias View = NSView
+    public typealias StackView = NSStackView
+    public typealias EdgeInsets = NSEdgeInsets
+    #endif
+
     public typealias NSLayoutAttribute = NSLayoutConstraint.Attribute
 
     // MARK: Apply contraint
-    public class func activate(_ root: UIView, forConstraint all: Array<Any>) -> Void {
+    public class func activate(_ root: View, forConstraint all: Array<Any>) -> Void {
         // Not use the root.subViews, since it will find UISlider's contraint
         // <_UISlideriOSVisualElement: 0x14b6145f0; frame = (0 0; 100 34); opaque = NO; autoresize = W+H; layer = <CALayer: 0x283337920>>
         // and cause UISlider fail to layout with given constraints
 
         // Step 1: Collects the used views in constraints, exclude root
-        var used: Set<UIView> = Self.getUsedViews(all)
+        var used: Set<View> = Self.getUsedViews(all)
         // Omit root since it may have constraint from storyboard
         used.remove(root)
 
@@ -85,13 +99,13 @@ public class FLLayouts {
         Self.applyConstraints(all)
     }
 
-    public class func disableAutoResizingMask(_ child: Set<UIView>) -> Void {
+    public class func disableAutoResizingMask(_ child: Set<View>) -> Void {
         for v in child {
             v.translatesAutoresizingMaskIntoConstraints = false
         }
     }
 
-    public class func disableAutoResizingMask(_ child: Array<UIView>) -> Void {
+    public class func disableAutoResizingMask(_ child: Array<View>) -> Void {
         let n = child.count
         for i in 0..<n {
             let v = child[i]
@@ -108,28 +122,28 @@ public class FLLayouts {
     // MARK: Add views
     // DFS on child and add child to parent, then return root (child's parent)
     @discardableResult
-    public class func addViewTo(_ root: UIView, child:Array<Any>) -> UIView {
+    public class func addViewTo(_ root: View, child:Array<Any>) -> View {
         //let isToStack = root is UIStackView// [root isKindOfClass:UIStackView.class];
         let n = child.count
         for i in 0..<n {
             let x = child[i]
-            var w: UIView? = nil
+            var w: View? = nil
             if let a = x as? Array<Any> {
                 let p = i - 1
                 if (p < 0) {
                     print("Wrong for child[\(p)]")
                 } else {
                     let ch = child[p]
-                    if let v = ch as? UIView {
+                    if let v = ch as? View {
                         w = Self.addViewTo(v, child: a)
                     }
                 }
-            } else if let v = x as? UIView {
+            } else if let v = x as? View {
                 w = v;
             }
             //if (w != nil) {
             if let w = w {
-                if let stack = root as? UIStackView {
+                if let stack = root as? StackView {
                     stack.addArrangedSubview(w)
                 } else {
                     root.addSubview(w)
@@ -141,10 +155,10 @@ public class FLLayouts {
 
     // MARK: DFS methods
     // Let all = [NSLayoutConstraint or [NSLayoutConstraint]]
-    // Returns non-null UIView used in NSLayoutConstraint, named S,
+    // Returns non-null View used in NSLayoutConstraint, named S,
     // formally defined as S = {x.firstItem, x.secondItem} for each x in all
-    private class func getUsedViews(_ all:Array<Any>) -> Set<UIView> {
-        var used:Set<UIView> = [];
+    private class func getUsedViews(_ all:Array<Any>) -> Set<View> {
+        var used:Set<View> = [];
         for x in all {
             if let a = x as? Array<Any> {
                 let inner = Self.getUsedViews(a)
@@ -152,7 +166,7 @@ public class FLLayouts {
             } else if let c = x as? NSLayoutConstraint {
                 let vi = [c.firstItem, c.secondItem]
                 for y in vi {
-                    if let v = y as? UIView {
+                    if let v = y as? View {
                         used.insert(v)
                     }
                 }
@@ -178,14 +192,14 @@ public class FLLayouts {
         return used
     }
 
-    // Expand all as List<UIView>
-    public class func expandAllViews(_ all:Array<Any>) -> Array<UIView> {
-        var used:Array<UIView> = []
+    // Expand all as List<View>
+    public class func expandAllViews(_ all:Array<Any>) -> Array<View> {
+        var used:Array<View> = []
         for x in all {
             if let a = x as? Array<Any> {
                 let inner = Self.expandAllViews(a)
                 used += inner
-            } else if let v = x as? UIView {
+            } else if let v = x as? View {
                 used.append(v)
             } else {
                 print("Did not add item : \(x)");
@@ -204,25 +218,31 @@ public class FLLayouts {
     }
 
     // MARK: Safe area
-    public class func view(_ v1:UIView, equalToSafeAreaOf v2:UIView) -> Array<NSLayoutConstraint> {
-        let g = v2.safeAreaLayoutGuide
-        return [
-            v1.topAnchor.constraint(equalTo: g.topAnchor),
-            v1.leftAnchor.constraint(equalTo: g.leftAnchor),
-            v1.rightAnchor.constraint(equalTo: g.rightAnchor),
-            v1.bottomAnchor.constraint(equalTo: g.bottomAnchor),
-        ]
+    public class func view(_ v1:View, equalToSafeAreaOf v2:View) -> Array<NSLayoutConstraint> {
+        if #available(macOS 11.0, iOS 11.0, *) {
+            //if #available(macOS 11.0, *), #available(iOS 11.0, *) { // ?
+            let g = v2.safeAreaLayoutGuide
+            return [
+                v1.topAnchor.constraint(equalTo: g.topAnchor),
+                v1.leftAnchor.constraint(equalTo: g.leftAnchor),
+                v1.rightAnchor.constraint(equalTo: g.rightAnchor),
+                v1.bottomAnchor.constraint(equalTo: g.bottomAnchor),
+            ]
+        } else {
+            // Fallback on earlier versions
+            return []
+        }
     }
 
     // MARK: - For constraints, v1.a1 = m x v2.a2 + c
     // MARK: Constant value
     // v1.attr = val
-    public class func view(_ v1:UIView, set attr:NSLayoutAttribute, to val:Double) -> NSLayoutConstraint {
+    public class func view(_ v1:View, set attr:NSLayoutAttribute, to val:Double) -> NSLayoutConstraint {
         return NSLayoutConstraint.init(item: v1, attribute: attr, relatedBy: .equal,
                 toItem: nil, attribute: attr, multiplier: 1, constant: CGFloat(val))
     }
 
-    public class func views(_ v1:Array<UIView?>, set attr:NSLayoutAttribute, to val:Double) -> Array<NSLayoutConstraint> {
+    public class func views(_ v1:Array<View?>, set attr:NSLayoutAttribute, to val:Double) -> Array<NSLayoutConstraint> {
         var a:Array<NSLayoutConstraint> = []
         for v in v1 {
             if let v = v {
@@ -234,7 +254,7 @@ public class FLLayouts {
     }
 
     // MARK: Size
-    public class func view(_ v1:UIView, width:Double , height: Double) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View, width:Double , height: Double) -> Array<NSLayoutConstraint> {
         return [
             Self.view(v1, set: .width, to: width),
             Self.view(v1, set: .height, to: height),
@@ -242,7 +262,7 @@ public class FLLayouts {
     }
 
     // MARK: v1.attr = v2.attr + c
-    public class func view(_ v1:UIView? = nil, aline attr:NSLayoutAttribute, to v2:Array<UIView>, margins margins:Array<Double> = [0]) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View? = nil, aline attr:NSLayoutAttribute, to v2:Array<View>, margins margins:Array<Double> = [0]) -> Array<NSLayoutConstraint> {
         var ans:[NSLayoutConstraint] = []
         let n = v2.count
         if (n == 0) {
@@ -251,7 +271,7 @@ public class FLLayouts {
 
         // Determine first one
         var from:Int = 0
-        var p:UIView
+        var p:View
         if let v1 = v1 {
             //  v1, v2 = [a, b, ..., ]
             //  p^        ^from
@@ -284,38 +304,38 @@ public class FLLayouts {
         return ans
     }
 
-    public class func view(_ v1:UIView, align attr:NSLayoutAttribute, to v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+    public class func view(_ v1:View, align attr:NSLayoutAttribute, to v2:View, offset c:Double = 0) -> NSLayoutConstraint {
         return NSLayoutConstraint.init(item: v1, attribute: attr, relatedBy: .equal,
                 toItem: v2, attribute: attr, multiplier: 1, constant: CGFloat(c))
     }
 
     // MARK: Relative Layout, above|below, to(Left|Right)Of
     // v1.bottom = v2.top - c
-    public class func view(_ v1:UIView, above v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+    public class func view(_ v1:View, above v2:View, offset c:Double = 0) -> NSLayoutConstraint {
         return NSLayoutConstraint.init(item: v1, attribute: .bottom, relatedBy: .equal,
                 toItem: v2, attribute: .top, multiplier: 1, constant: CGFloat(-c))
     }
 
-    public class func view(_ v1:UIView, below v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+    public class func view(_ v1:View, below v2:View, offset c:Double = 0) -> NSLayoutConstraint {
         return Self.view(v2, above:v1, offset: -c)
     }
 
     // v1.left = v2.right + c
-    public class func view(_ v1:UIView, toLeftOf v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+    public class func view(_ v1:View, toLeftOf v2:View, offset c:Double = 0) -> NSLayoutConstraint {
         return NSLayoutConstraint.init(item: v1, attribute: .right, relatedBy: .equal,
                 toItem: v2, attribute: .left, multiplier: 1, constant: CGFloat(-c))
     }
 
-    public class func view(_ v1:UIView, toRightOf v2:UIView, offset c:Double = 0) -> NSLayoutConstraint {
+    public class func view(_ v1:View, toRightOf v2:View, offset c:Double = 0) -> NSLayoutConstraint {
         return Self.view(v2, toLeftOf:v1, offset: -c)
     }
 
     // MARK: Linear layout
-    public class func layout(_ v2:Array<UIView>, axis direction:FLDirection, margins gaps: Array<Double> = [0]) -> Array<NSLayoutConstraint> {
+    public class func layout(_ v2:Array<View>, axis direction:FLDirection, margins gaps: Array<Double> = [0]) -> Array<NSLayoutConstraint> {
         return Self.view(nil, layout: v2, axis: direction, margins:gaps)
     }
 
-    public class func view(_ v1:UIView?, layout v2:Array<UIView>, axis direction:FLDirection, margins margins: Array<Double> = [0]) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View?, layout v2:Array<View>, axis direction:FLDirection, margins margins: Array<Double> = [0]) -> Array<NSLayoutConstraint> {
         var ans:Array<NSLayoutConstraint> = []
         let n = v2.count
         var head:NSLayoutAttribute = .left
@@ -369,7 +389,7 @@ public class FLLayouts {
         return ans
     }
 
-    public class func view(_ v1:UIView, layout v2:Array<UIView>, axis direction:FLDirection, gravity gravity:FLGravity, margins margins:Array<Double>) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View, layout v2:Array<View>, axis direction:FLDirection, gravity gravity:FLGravity, margins margins:Array<Double>) -> Array<NSLayoutConstraint> {
         var ans:Array<NSLayoutConstraint> = []
         var size: NSLayoutAttribute = .notAnAttribute
         switch (direction) {
@@ -407,7 +427,7 @@ public class FLLayouts {
     }
 
     // MARK: Corner = 2 side alignment
-    public class func view(_ v1:UIView, corner at:FLCorner, to v2:UIView, offsetX dx:Double = 0, offsetY dy:Double = 0) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View, corner at:FLCorner, to v2:View, offsetX dx:Double = 0, offsetY dy:Double = 0) -> Array<NSLayoutConstraint> {
         var ans:Array<NSLayoutConstraint> = []
         var x:NSLayoutAttribute = .left
         var y:NSLayoutAttribute = .top
@@ -446,7 +466,7 @@ public class FLLayouts {
     }
 
     // MARK: Drawer
-    public class func view(_ v1:UIView, drawer at:FLSide, to v2:UIView, depth d:Double, offset margin:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View, drawer at:FLSide, to v2:View, depth d:Double, offset margin:EdgeInsets = .zero) -> Array<NSLayoutConstraint> {
         var ans:Array<NSLayoutConstraint> = []
         if (at == .no) {
             return ans
@@ -486,7 +506,7 @@ public class FLLayouts {
 
     // Mark: - Same
     // v1.(width|height) = v2.(width|height) + (dx|dy)
-    public class func view(_ v1:UIView, sameWHTo v2:UIView, offsetX dx:Double = 0, offsetY dy:Double = 0) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View, sameWHTo v2:View, offsetX dx:Double = 0, offsetY dy:Double = 0) -> Array<NSLayoutConstraint> {
         return [
             Self.view(v1, align: .width, to: v2, offset: dx),
             Self.view(v1, align: .height, to: v2, offset: dy),
@@ -494,7 +514,7 @@ public class FLLayouts {
     }
 
     // v1.(left|right) = v2.(left|right) + (dx|dy)
-    public class func view(_ v1:UIView, sameXTo v2:UIView, offset margin:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View, sameXTo v2:View, offset margin:EdgeInsets = .zero) -> Array<NSLayoutConstraint> {
         return [
             Self.view(v1, align: .left, to: v2, offset:Double(margin.left)),
             Self.view(v1, align: .right, to: v2, offset:Double(-margin.right)),
@@ -502,7 +522,7 @@ public class FLLayouts {
     }
 
     // v1.(top|bottom) = v2.(top|bottom) + (dx|dy)
-    public class func view(_ v1:UIView, sameYTo v2:UIView, offset margin:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View, sameYTo v2:View, offset margin:EdgeInsets = .zero) -> Array<NSLayoutConstraint> {
         return [
             Self.view(v1, align: .top, to: v2, offset:Double(margin.top)),
             Self.view(v1, align: .bottom, to: v2, offset:Double(-margin.bottom)),
@@ -510,7 +530,7 @@ public class FLLayouts {
     }
 
     // v1.allSides = v2.allSides + offset
-    public class func view(_ v1:UIView, sameTo v2:UIView, offset margin:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+    public class func view(_ v1:View, sameTo v2:View, offset margin:EdgeInsets = .zero) -> Array<NSLayoutConstraint> {
         return [
             Self.view(v1, align: .top, to: v2, offset:Double(margin.top)),
             Self.view(v1, align: .left, to: v2, offset:Double(margin.left)),
@@ -519,7 +539,7 @@ public class FLLayouts {
         ]
     }
 
-    public class func views(_ v1:Array<UIView>, same opt:FLSame, margins margins:UIEdgeInsets = .zero) -> Array<NSLayoutConstraint> {
+    public class func views(_ v1:Array<View>, same opt:FLSame, margins margins:EdgeInsets = .zero) -> Array<NSLayoutConstraint> {
         var ans:Array<NSLayoutConstraint> = []
         let n = v1.count
         if (opt == .no || n == 0) {

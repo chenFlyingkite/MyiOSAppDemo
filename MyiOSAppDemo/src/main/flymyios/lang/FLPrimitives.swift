@@ -108,17 +108,17 @@ extension Array {
 // Int64 (in Swift) = long long (in C)
 
 extension UInt {
-    public func hex() -> String { return String.init(format: "0x%x", self); }
+    public func hex() -> String { return String(format: "0x%x", self); }
 }
 extension UInt32 {
-    public func hex() -> String { return String.init(format: "0x%x", self); }
+    public func hex() -> String { return String(format: "0x%x", self); }
 }
 extension Int32 {
-    public func hex() -> String { return String.init(format: "0x%x", self); }
+    public func hex() -> String { return String(format: "0x%x", self); }
 }
 
 extension Int {
-    public func hex() -> String { return String.init(format:"0x%x", self); }
+    public func hex() -> String { return String(format:"0x%x", self); }
     @discardableResult
     public static postfix func ++ (x: inout Int) -> Int { x = x + 1; return x; }
     @discardableResult
