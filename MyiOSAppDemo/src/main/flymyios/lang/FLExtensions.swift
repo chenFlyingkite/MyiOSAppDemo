@@ -13,3 +13,11 @@ extension Date {
         return Int64(self.timeIntervalSince1970 * 1000)
     }
 }
+
+extension DateFormatter {
+    public class func of(_ f:String) -> DateFormatter {
+        let x = DateFormatter()
+        x.dateFormat = f
+        return x
+    }
+}

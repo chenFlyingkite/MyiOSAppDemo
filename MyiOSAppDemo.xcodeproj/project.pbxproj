@@ -17,6 +17,7 @@
 		432B93E5273C6DA193FDE901 /* FLGLs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432B98E112DBE94F02CC66CE /* FLGLs.swift */; };
 		432B95BDE926856B05954332 /* FLLayouts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432B98A728D31CDC641207C7 /* FLLayouts.swift */; };
 		432B9686EABCE82D46D753FA /* FLCGFloats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432B9245FCD2CB3E067F485E /* FLCGFloats.swift */; };
+		432B97748CE8C2E5FA6F61F8 /* FLLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432B97805238ACEE0E03D246 /* FLLog.swift */; };
 		432B9811F6EE072D7267576D /* FLStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432B9BF7C7DFBBD4699C6820 /* FLStrings.swift */; };
 		432B9898AE7BB84D9A95515E /* OpenGLContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432B93967048010228DA5C12 /* OpenGLContext.swift */; };
 		432B9A32C4BC8A1ECCE258BB /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 432B954B6D6ED96ACC91A6A9 /* Main.storyboard */; };
@@ -44,6 +45,7 @@
 		432B95ED93B3514A0892A951 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		432B965C3AB00F26A8F6E777 /* FLCollections.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FLCollections.swift; sourceTree = "<group>"; };
 		432B96DF0B2D6FBF61C96A56 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		432B97805238ACEE0E03D246 /* FLLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FLLog.swift; sourceTree = "<group>"; };
 		432B98A728D31CDC641207C7 /* FLLayouts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FLLayouts.swift; sourceTree = "<group>"; };
 		432B98E112DBE94F02CC66CE /* FLGLs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FLGLs.swift; sourceTree = "<group>"; };
 		432B98EB99A8725D39FE629F /* BaseViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseViewController.swift; sourceTree = "<group>"; };
@@ -112,6 +114,7 @@
 				432B902451F7ED8D696C4F35 /* lang */,
 				432B9EAC5E2007CEA9EF0E4D /* ui */,
 				432B94CB4FF8D058B61E85EE /* tool */,
+				432B9D4FF25348889D64A98B /* util */,
 			);
 			path = flymyios;
 			sourceTree = "<group>";
@@ -192,6 +195,14 @@
 				432B952771F59EDC313037AC /* MyiOSAppDemo.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		432B9D4FF25348889D64A98B /* util */ = {
+			isa = PBXGroup;
+			children = (
+				432B97805238ACEE0E03D246 /* FLLog.swift */,
+			);
+			path = util;
 			sourceTree = "<group>";
 		};
 		432B9EAC5E2007CEA9EF0E4D /* ui */ = {
@@ -342,6 +353,7 @@
 				432B9A96D3D8C0CC3D5B5F06 /* ShaderCode.swift in Sources */,
 				432B9898AE7BB84D9A95515E /* OpenGLContext.swift in Sources */,
 				432B9C7139738567EAA57279 /* ShaderProgram.swift in Sources */,
+				432B97748CE8C2E5FA6F61F8 /* FLLog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
